@@ -1,0 +1,32 @@
+name: GLaDOS check-in
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub cron uses UTC. This is 09:17 in Asia/Shanghai.
+    - cron: "17 1 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: glados-daily-checkin
+  cancel-in-progress: false
+
+jobs:
+  checkin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Check in
+        env:
+          GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
+          GLADOS_JITTER_SECONDS: "300"
+        run: python main.py
+
