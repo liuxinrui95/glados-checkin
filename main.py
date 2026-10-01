@@ -36,16 +36,21 @@ def main() -> int:
             cookie=os.getenv("GLADOS_COOKIE", ""),
             base_url=os.getenv("GLADOS_BASE_URL", "https://glados.rocks"),
             checkin_path=os.getenv("GLADOS_CHECKIN_PATH", "/api/user/checkin"),
-            token=os.getenv("GLADOS_CHECKIN_TOKEN", "glados.one"),
+            token=os.getenv("GLADOS_CHECKIN_TOKEN") or None,
+            user_agent=os.getenv("GLADOS_USER_AGENT", "glados-checkin/2.0"),
             timeout=float(os.getenv("GLADOS_TIMEOUT", "15")),
             retries=int(os.getenv("GLADOS_RETRIES", "2")),
         )
         result = client.checkin()
-        print(json.dumps({
+        output = json.dumps({
             "ok": result.ok,
             "message": result.message,
             "api_code": result.api_code,
-        }, ensure_ascii=False))
+        }, ensure_ascii=False)
+        print(output)
+        if not result.ok and os.getenv("GITHUB_ACTIONS") == "true":
+            annotation = output.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+            print(f"::error title=GLaDOS check-in failed::{annotation}")
         return int(result.exit_code)
     except (ValueError, TypeError) as exc:
         print(json.dumps({"ok": False, "message": str(exc)}, ensure_ascii=False), file=sys.stderr)
@@ -54,4 +59,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
