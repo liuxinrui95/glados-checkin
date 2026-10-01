@@ -2,6 +2,13 @@ name: GLaDOS check-in
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "main.py"
+      - "glados_checkin/**"
+      - "tests/**"
+      - ".github/workflows/checkin.yml"
   schedule:
     # GitHub cron uses UTC. This is 09:17 in Asia/Shanghai.
     - cron: "17 1 * * *"
@@ -18,15 +25,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Run tests
         run: python -m unittest discover -s tests -v
       - name: Check in
+        if: github.event_name != 'push'
         env:
           GLADOS_COOKIE: ${{ secrets.GLADOS_COOKIE }}
+          GLADOS_USER_AGENT: ${{ vars.GLADOS_USER_AGENT }}
           GLADOS_JITTER_SECONDS: "300"
         run: python main.py
-
